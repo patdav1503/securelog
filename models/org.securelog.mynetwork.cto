@@ -61,7 +61,7 @@ enum ErrorStatus {
 asset ErrorMessage identified by messageId {
   o String messageId
   --> System creator
-  --> Member owner
+  --> User owner
   o String errorType
   o ErrorSeverity errorSeverity
   o ErrorStatus errorStatus
