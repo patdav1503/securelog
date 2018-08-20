@@ -12,6 +12,41 @@
  * limitations under the License.
  */
 
+/**
+ * Rules for Participant registry access
+ */
+rule User_R_Member {
+    description: "Grant users access to User resources"
+    participant: "org.securelog.mynetwork.User"
+    operation: READ
+    resource: "org.securelog.mynetwork.Member"
+    action: ALLOW
+}
+ 
+rule User_R_Level2 {
+    description: "Grant users access to User resources"
+    participant: "org.securelog.mynetwork.User"
+    operation: READ
+    resource: "org.securelog.mynetwork.Level2"
+    action: ALLOW
+}
+ 
+rule User_R_Level3 {
+    description: "Grant users access to User resources"
+    participant: "org.securelog.mynetwork.User"
+    operation: READ
+    resource: "org.securelog.mynetwork.Level3"
+    action: ALLOW
+}
+ 
+rule User_R_System {
+    description: "Grant users access to User resources"
+    participant: "org.securelog.mynetwork.User"
+    operation: READ
+    resource: "org.securelog.mynetwork.System"
+    action: ALLOW
+}
+ 
 rule Admin {
     description: "Allow the admin full access"
     participant: "org.securelog.mynetwork.Admin"
@@ -62,6 +97,30 @@ rule ErrorMessageCreator {
     operation: ALL
     resource(m): "org.securelog.mynetwork.ErrorMessage"
     condition: (m.creator.getIdentifier() == u.getIdentifier())
+    action: ALLOW
+}
+
+rule SystemCanPostErrorMessages {
+    description: "Allow all participants to submit send transactions"
+    participant: "org.securelog.mynetwork.System"
+    operation: CREATE
+    resource: "org.securelog.mynetwork.postErrorMessage"
+    action: ALLOW
+}
+
+rule EverybodyCanUpdateEMOwner {
+    description: "Allow all participants to submit update error message owner"
+    participant: "org.securelog.mynetwork.User"
+    operation: CREATE
+    resource: "org.securelog.mynetwork.updateErrorMessageOwner"
+    action: ALLOW
+}
+
+rule EverybodyCanUpdateEMStatus {
+    description: "Allow all participants to submit update error message status"
+    participant: "org.securelog.mynetwork.User"
+    operation: CREATE
+    resource: "org.securelog.mynetwork.updateErrorMessageStatus"
     action: ALLOW
 }
 

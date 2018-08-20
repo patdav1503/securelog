@@ -68,3 +68,22 @@ asset ErrorMessage identified by messageId {
   o String errorText
 }
 
+transaction postErrorMessage {
+  o String messageId
+  --> System creator optional
+  --> User owner
+  o String errorType
+  o ErrorSeverity errorSeverity optional
+  o ErrorStatus errorStatus optional
+  o String errorText
+}
+
+transaction updateErrorMessageOwner {
+  --> ErrorMessage oldMessage
+  --> User newOwner
+}
+
+transaction updateErrorMessageStatus {
+  --> ErrorMessage oldMessage
+  o ErrorStatus newStatus
+}

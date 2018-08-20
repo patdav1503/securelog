@@ -3,7 +3,7 @@
     "composer": "^0.19.12"
   },
   "name": "securelog-network",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Secure logging hyperledger composer network",
   "scripts": {
     "prepublish": "mkdirp ./dist && composer archive create --sourceType dir --sourceName . -a ./dist/securelog-network.bna",

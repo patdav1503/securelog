@@ -127,4 +127,87 @@ Feature: Secure Logging Network
             | 001       |
         Then I should get an error matching /does not have .* access to resource/
 
+    Scenario: System can post an error message
+        When I use the identity system1
+        And I submit the following transaction
+            """
+            [
+            {"$class":"org.securelog.mynetwork.postErrorMessage", "creator":"org.securelog.mynetwork.System#system@email.com", "owner":"org.securelog.mynetwork.Member#alice@email.com", "messageId":"051", "errorType":"Math Module", "errorSeverity":"WARNING","errorStatus":"NEW","errorText":"Exception in module divide"}
+            ]
+            """
+        Then I should have the following assets
+            """
+            [
+            {"$class":"org.securelog.mynetwork.ErrorMessage", "messageId":"051", "creator":"org.securelog.mynetwork.System#system@email.com", "owner":"org.securelog.mynetwork.Member#alice@email.com", "errorType":"Math Module", "errorSeverity":"WARNING","errorStatus":"NEW","errorText":"Exception in module divide"}
+            ]
+            """
+
+    Scenario: Alice can update an owner for error message she owns
+        When I use the identity alice1
+        And I submit the following transaction
+            """
+            [
+            {"$class":"org.securelog.mynetwork.updateErrorMessageOwner", "oldMessage":"org.securelog.mynetwork.ErrorMessage#001", "newOwner":"org.securelog.mynetwork.Level3#george@email.com"}
+            ]
+            """
+        Then I should not have the following assets
+            """
+            [
+            {"$class":"org.securelog.mynetwork.ErrorMessage", "messageId":"001", "creator":"org.securelog.mynetwork.System#system@email.com", "owner":"org.securelog.mynetwork.Level3#george@email.com", "errorType":"Math Module","errorSeverity":"CRITICAL","errorStatus":"NEW","errorText":"Exception in the function add"}
+            ]
+            """
+
+    Scenario: Alice can update an error message status
+        When I use the identity alice1
+        And I submit the following transaction
+            """
+            [
+            {"$class":"org.securelog.mynetwork.updateErrorMessageStatus", "oldMessage":"org.securelog.mynetwork.ErrorMessage#001", "newStatus":"RESEARCH"}
+            ]
+            """
+        Then I should have the following assets
+            """
+            [
+            {"$class":"org.securelog.mynetwork.ErrorMessage", "messageId":"001", "creator":"org.securelog.mynetwork.System#system@email.com", "owner":"org.securelog.mynetwork.Member#alice@email.com", "errorType":"Math Module","errorSeverity":"CRITICAL","errorStatus":"RESEARCH","errorText":"Exception in the function add"}
+            ]
+            """
+
+    Scenario: Alice can not update Bob's message subject
+        When I use the identity alice1
+        And I submit the following transaction
+            """
+            [
+            {"$class":"org.securelog.mynetwork.updateErrorMessageStatus", "oldMessage":"org.securelog.mynetwork.ErrorMessage#002", "newStatus":"RESEARCH"}
+            ]
+            """
+        Then I should get an error matching /does not have .* access to resource/
+
+    Scenario: Alice can update an owner for error message she owns, can't see it after update but george can
+        When I use the identity alice1
+        And I should have the following assets
+            """
+            [
+            {"$class":"org.securelog.mynetwork.ErrorMessage", "messageId":"001", "creator":"org.securelog.mynetwork.System#system@email.com", "owner":"org.securelog.mynetwork.Member#alice@email.com", "errorType":"Math Module","errorSeverity":"CRITICAL","errorStatus":"NEW","errorText":"Exception in the function add"}
+            ]
+            """
+        And I submit the following transaction
+            """
+            [
+            {"$class":"org.securelog.mynetwork.updateErrorMessageOwner", "oldMessage":"org.securelog.mynetwork.ErrorMessage#001", "newOwner":"org.securelog.mynetwork.Level3#george@email.com"}
+            ]
+            """
+        And I should not have the following assets
+            """
+            [
+            {"$class":"org.securelog.mynetwork.ErrorMessage", "messageId":"001", "creator":"org.securelog.mynetwork.System#system@email.com", "owner":"org.securelog.mynetwork.Level3#george@email.com", "errorType":"Math Module","errorSeverity":"CRITICAL","errorStatus":"NEW","errorText":"Exception in the function add"}
+            ]
+            """
+        And I use the identity george1
+        Then I should have the following assets
+            """
+            [
+            {"$class":"org.securelog.mynetwork.ErrorMessage", "messageId":"001", "creator":"org.securelog.mynetwork.System#system@email.com", "owner":"org.securelog.mynetwork.Level3#george@email.com", "errorType":"Math Module","errorSeverity":"CRITICAL","errorStatus":"NEW","errorText":"Exception in the function add"}
+            ]
+            """
+
 

@@ -457,5 +457,40 @@ describe('#' + namespace, () => {
         assetRegistry.update(asset2).should.be.rejectedWith(/does not have .* access to resource/);
     });
 
+    it('System can post an error message', async () => {
+        // Use the identity for System.
+        await useIdentity(systemCardName);
+
+        // Submit the reply.
+        const myMessage = factory.newTransaction(namespace, 'postErrorMessage');
+        myMessage.messageId = '51';
+        myMessage.creator = factory.newRelationship(namespace, participantType4, 'system@email.com');
+        myMessage.owner = factory.newRelationship(namespace, participantType, 'alice@email.com');
+        myMessage.errorType = 'Math Module';
+        myMessage.errorSeverity = 'WARNING';
+        myMessage.errorStatus = 'NEW';
+        myMessage.errorText = 'A non-fatal error has occurred in function subtract';
+        await businessNetworkConnection.submitTransaction(myMessage);
+
+        // Get the asset.
+        const assetRegistry = await businessNetworkConnection.getAssetRegistry(namespace + '.' + 'ErrorMessage');
+        const asset1 = await assetRegistry.get('51');
+
+        // Validate the asset.
+        asset1.owner.getFullyQualifiedIdentifier().should.equal(participantNS + '#alice@email.com');
+        asset1.errorType.should.equal('Math Module');
+        asset1.errorSeverity.should.equal('WARNING');
+        asset1.errorStatus.should.equal('NEW');
+        asset1.errorText.should.equal('A non-fatal error has occurred in function subtract');
+
+        // Validate the events.
+        //events.should.have.lengthOf(1);
+        //const event = events[0];
+        //event.eventId.should.be.a('string');
+        //event.timestamp.should.be.an.instanceOf(Date);
+        //event.creator.getFullyQualifiedIdentifier().should.equal(participantNS + '#alice@email.com');
+        //event.subject.should.equal(myMessage.subject);
+    });
+
 
 });
