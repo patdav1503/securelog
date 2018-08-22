@@ -87,3 +87,34 @@ transaction updateErrorMessageStatus {
   --> ErrorMessage oldMessage
   o ErrorStatus newStatus
 }
+
+transaction updateErrorMessageSeverity {
+  --> ErrorMessage oldMessage
+  o ErrorSeverity newSeverity
+}
+
+event ErrorMessageCreated {
+  o String newMessage
+  --> System creator
+  --> User owner
+  o String errorType
+  o ErrorSeverity errorSeverity
+}
+
+event ErrorMessageOwnerUpdated {
+  o String oldMessage
+  --> User oldOwner
+  --> User newOwner
+}
+
+event ErrorMessageStatusUpdated {
+  o String oldMessage
+  o ErrorStatus oldStatus
+  o ErrorStatus newStatus
+}
+
+event ErrorMessageSeverityUpdated {
+  o String oldMessage
+  o ErrorSeverity oldSeverity
+  o ErrorSeverity newSeverity
+}

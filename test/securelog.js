@@ -484,13 +484,377 @@ describe('#' + namespace, () => {
         asset1.errorText.should.equal('A non-fatal error has occurred in function subtract');
 
         // Validate the events.
-        //events.should.have.lengthOf(1);
-        //const event = events[0];
-        //event.eventId.should.be.a('string');
-        //event.timestamp.should.be.an.instanceOf(Date);
-        //event.creator.getFullyQualifiedIdentifier().should.equal(participantNS + '#alice@email.com');
-        //event.subject.should.equal(myMessage.subject);
+        events.should.have.lengthOf(1);
+        const event = events[0];
+        event.eventId.should.be.a('string');
+        event.timestamp.should.be.an.instanceOf(Date);
+        event.owner.getFullyQualifiedIdentifier().should.equal(participantNS + '#alice@email.com');
+        event.errorSeverity.should.equal('WARNING');
     });
 
+    it('System can post an error message without creator and status', async () => {
+        // Use the identity for System.
+        await useIdentity(systemCardName);
+
+        // Post the error message.
+        const myMessage = factory.newTransaction(namespace, 'postErrorMessage');
+        myMessage.messageId = '51';
+        myMessage.owner = factory.newRelationship(namespace, participantType, 'alice@email.com');
+        myMessage.errorType = 'Math Module';
+        myMessage.errorSeverity = 'WARNING';
+        myMessage.errorText = 'A non-fatal error has occurred in function subtract';
+        await businessNetworkConnection.submitTransaction(myMessage);
+
+        // Get the asset.
+        const assetRegistry = await businessNetworkConnection.getAssetRegistry(namespace + '.' + 'ErrorMessage');
+        const asset1 = await assetRegistry.get('51');
+
+        // Validate the asset.
+        asset1.owner.getFullyQualifiedIdentifier().should.equal(participantNS + '#alice@email.com');
+        asset1.errorType.should.equal('Math Module');
+        asset1.errorSeverity.should.equal('WARNING');
+        asset1.errorStatus.should.equal('NEW');
+        asset1.errorText.should.equal('A non-fatal error has occurred in function subtract');
+
+        // Validate the events.
+        events.should.have.lengthOf(1);
+        const event = events[0];
+        event.eventId.should.be.a('string');
+        event.timestamp.should.be.an.instanceOf(Date);
+        event.owner.getFullyQualifiedIdentifier().should.equal(participantNS + '#alice@email.com');
+        event.errorSeverity.should.equal('WARNING');
+    });
+
+    it('Alice can not post an error message', async () => {
+        // Use the identity for Alice.
+        await useIdentity(aliceCardName);
+
+        // Post the error message.
+        const myMessage = factory.newTransaction(namespace, 'postErrorMessage');
+        myMessage.messageId = '51';
+        myMessage.owner = factory.newRelationship(namespace, participantType, 'alice@email.com');
+        myMessage.errorType = 'Math Module';
+        myMessage.errorSeverity = 'WARNING';
+        myMessage.errorText = 'A non-fatal error has occurred in function subtract';
+        await businessNetworkConnection.submitTransaction(myMessage).should.be.rejectedWith(/does not have .* access to resource/);
+
+    });
+
+    it('Bob can not post an error message', async () => {
+        // Use the identity for Alice.
+        await useIdentity(bobCardName);
+
+        // Post the error message.
+        const myMessage = factory.newTransaction(namespace, 'postErrorMessage');
+        myMessage.messageId = '51';
+        myMessage.owner = factory.newRelationship(namespace, participantType2, 'bob@email.com');
+        myMessage.errorType = 'Math Module';
+        myMessage.errorSeverity = 'WARNING';
+        myMessage.errorText = 'A non-fatal error has occurred in function subtract';
+        await businessNetworkConnection.submitTransaction(myMessage).should.be.rejectedWith(/does not have .* access to resource/);
+
+    });
+
+    it('George can not post an error message', async () => {
+        // Use the identity for Alice.
+        await useIdentity(georgeCardName);
+
+        // Post the error message.
+        const myMessage = factory.newTransaction(namespace, 'postErrorMessage');
+        myMessage.messageId = '51';
+        myMessage.owner = factory.newRelationship(namespace, participantType3, 'george@email.com');
+        myMessage.errorType = 'Math Module';
+        myMessage.errorSeverity = 'WARNING';
+        myMessage.errorText = 'A non-fatal error has occurred in function subtract';
+        await businessNetworkConnection.submitTransaction(myMessage).should.be.rejectedWith(/does not have .* access to resource/);
+
+    });
+
+    it('Alice can update the owner for her message', async () => {
+        // Use the identity for Alice.
+        await useIdentity(aliceCardName);
+
+        // Submit the transaction.
+        const myTrans = factory.newTransaction(namespace, 'updateErrorMessageOwner');
+        myTrans.oldMessage = factory.newRelationship(namespace,'ErrorMessage','1');
+        myTrans.newOwner = factory.newRelationship(namespace, participantType3, 'george@email.com');
+        await businessNetworkConnection.submitTransaction(myTrans);
+
+        // Get the asset(no access since owner changed to George.
+        const assetRegistry = await businessNetworkConnection.getAssetRegistry(namespace + '.' + 'ErrorMessage');
+        var asset1 = await assetRegistry.get('1').should.be.rejectedWith(/does not have .* access to resource/);
+
+        // Validate the events.
+        events.should.have.lengthOf(1);
+        const event = events[0];
+        event.eventId.should.be.a('string');
+        event.timestamp.should.be.an.instanceOf(Date);
+        event.oldMessage.should.equal(myTrans.oldMessage.getFullyQualifiedIdentifier());
+        event.oldOwner.getFullyQualifiedIdentifier().should.equal(participantNS + '#alice@email.com');
+        event.newOwner.getFullyQualifiedIdentifier().should.equal(namespace + '.' + participantType3 + '#george@email.com');
+
+    });
+
+    it('Alice can not update the owner for Bob\'s error message', async () => {
+        // Use the identity for Alice.
+        await useIdentity(aliceCardName);
+
+        // Submit the transaction.
+        const myTrans = factory.newTransaction(namespace, 'updateErrorMessageOwner');
+        myTrans.oldMessage = factory.newRelationship(namespace,'ErrorMessage','2');
+        myTrans.newOwner = factory.newRelationship(namespace, participantType3, 'george@email.com');
+        await businessNetworkConnection.submitTransaction(myTrans).should.be.rejectedWith(/does not have .* access to resource/);
+
+    });
+
+    it('Bob can update the owner for his message', async () => {
+        // Use the identity for Alice.
+        await useIdentity(bobCardName);
+
+        // Submit the transaction.
+        const myTrans = factory.newTransaction(namespace, 'updateErrorMessageOwner');
+        myTrans.oldMessage = factory.newRelationship(namespace,'ErrorMessage','2');
+        myTrans.newOwner = factory.newRelationship(namespace, participantType3, 'george@email.com');
+        await businessNetworkConnection.submitTransaction(myTrans);
+
+        // Get the asset(can see asset even after changing owner since severity is WARNING
+        const assetRegistry = await businessNetworkConnection.getAssetRegistry(namespace + '.' + 'ErrorMessage');
+        var asset1 = await assetRegistry.get('2');
+        asset1.creator.getFullyQualifiedIdentifier().should.equal(namespace + '.' + participantType4 + '#system@email.com');
+        asset1.owner.getFullyQualifiedIdentifier().should.equal(namespace + '.' + participantType3 + '#george@email.com');
+        asset1.errorStatus = 'NEW';
+        asset1.errorSeverity = 'WARNING';
+        asset1.errorText.should.equal('A non-fatal error has occurred in function add');
+
+        // Validate the events.
+        events.should.have.lengthOf(1);
+        const event = events[0];
+        event.eventId.should.be.a('string');
+        event.timestamp.should.be.an.instanceOf(Date);
+        event.oldMessage.should.equal(myTrans.oldMessage.getFullyQualifiedIdentifier());
+        event.oldOwner.getFullyQualifiedIdentifier().should.equal(namespace + '.' + participantType2 + '#bob@email.com');
+        event.newOwner.getFullyQualifiedIdentifier().should.equal(namespace + '.' + participantType3 + '#george@email.com');
+
+    });
+
+    it('Bob can not update the owner for Alice\'s error message', async () => {
+        // Use the identity for Alice.
+        await useIdentity(bobCardName);
+
+        // Submit the transaction.
+        const myTrans = factory.newTransaction(namespace, 'updateErrorMessageOwner');
+        myTrans.oldMessage = factory.newRelationship(namespace,'ErrorMessage','1');
+        myTrans.newOwner = factory.newRelationship(namespace, participantType3, 'george@email.com');
+        await businessNetworkConnection.submitTransaction(myTrans).should.be.rejectedWith(/does not have .* access to resource/);
+
+    });
+
+    it('George can not update the owner for Alice\'s error message', async () => {
+        // Use the identity for Alice.
+        await useIdentity(georgeCardName);
+
+        // Submit the transaction.
+        const myTrans = factory.newTransaction(namespace, 'updateErrorMessageOwner');
+        myTrans.oldMessage = factory.newRelationship(namespace,'ErrorMessage','1');
+        myTrans.newOwner = factory.newRelationship(namespace, participantType3, 'george@email.com');
+        await businessNetworkConnection.submitTransaction(myTrans).should.be.rejectedWith(/does not have .* access to resource/);
+
+    });
+
+    it('Alice can update the status for her message', async () => {
+        // Use the identity for Alice.
+        await useIdentity(aliceCardName);
+
+        // Submit the transaction.
+        const myTrans = factory.newTransaction(namespace, 'updateErrorMessageStatus');
+        myTrans.oldMessage = factory.newRelationship(namespace,'ErrorMessage','1');
+        myTrans.newStatus = 'WORKING';
+        await businessNetworkConnection.submitTransaction(myTrans);
+
+        // Get the asset.
+        const assetRegistry = await businessNetworkConnection.getAssetRegistry(namespace + '.' + 'ErrorMessage');
+        var asset1 = await assetRegistry.get('1');
+
+        // Validate the asset.
+        asset1.owner.getFullyQualifiedIdentifier().should.equal(participantNS + '#alice@email.com');
+        asset1.errorType.should.equal('Math Module');
+        asset1.errorSeverity.should.equal('CRITICAL');
+        asset1.errorStatus.should.equal('WORKING');
+        asset1.errorText.should.equal('Exception in function multiply');
+
+        // Validate the events.
+        events.should.have.lengthOf(1);
+        const event = events[0];
+        event.eventId.should.be.a('string');
+        event.timestamp.should.be.an.instanceOf(Date);
+        event.oldMessage.should.equal(myTrans.oldMessage.getFullyQualifiedIdentifier());
+        event.oldStatus.should.equal('NEW');
+        event.newStatus.should.equal('WORKING');
+
+    });
+
+    it('Alice can not update the status for Bob\'s error message', async () => {
+        // Use the identity for Alice.
+        await useIdentity(aliceCardName);
+
+        // Submit the transaction.
+        const myTrans = factory.newTransaction(namespace, 'updateErrorMessageStatus');
+        myTrans.oldMessage = factory.newRelationship(namespace,'ErrorMessage','2');
+        myTrans.newStatus = 'WORKING';
+        await businessNetworkConnection.submitTransaction(myTrans).should.be.rejectedWith(/does not have .* access to resource/);
+
+    });
+
+    it('Bob can update the status for his message', async () => {
+        // Use the identity for Bob.
+        await useIdentity(bobCardName);
+
+        // Submit the transaction.
+        const myTrans = factory.newTransaction(namespace, 'updateErrorMessageStatus');
+        myTrans.oldMessage = factory.newRelationship(namespace,'ErrorMessage','2');
+        myTrans.newStatus = 'WORKING';
+        await businessNetworkConnection.submitTransaction(myTrans);
+
+        // Get the asset(can see asset even after changing owner since severity is WARNING
+        const assetRegistry = await businessNetworkConnection.getAssetRegistry(namespace + '.' + 'ErrorMessage');
+        var asset1 = await assetRegistry.get('2');
+        asset1.creator.getFullyQualifiedIdentifier().should.equal(namespace + '.' + participantType4 + '#system@email.com');
+        asset1.owner.getFullyQualifiedIdentifier().should.equal(namespace + '.' + participantType2 + '#bob@email.com');
+        asset1.errorStatus = 'WORKING';
+        asset1.errorSeverity = 'WARNING';
+        asset1.errorText.should.equal('A non-fatal error has occurred in function add');
+
+        // Validate the events.
+        events.should.have.lengthOf(1);
+        const event = events[0];
+        event.eventId.should.be.a('string');
+        event.timestamp.should.be.an.instanceOf(Date);
+        event.oldMessage.should.equal(myTrans.oldMessage.getFullyQualifiedIdentifier());
+        event.oldStatus.should.equal('NEW');
+        event.newStatus.should.equal('WORKING');
+
+    });
+
+    it('Bob can not update the status for Alice\'s error message', async () => {
+        // Use the identity for Bob.
+        await useIdentity(bobCardName);
+
+        // Submit the transaction.
+        const myTrans = factory.newTransaction(namespace, 'updateErrorMessageStatus');
+        myTrans.oldMessage = factory.newRelationship(namespace,'ErrorMessage','1');
+        myTrans.newStatus = 'WORKING';
+        await businessNetworkConnection.submitTransaction(myTrans).should.be.rejectedWith(/does not have .* access to resource/);
+
+    });
+
+    it('George can not update the status for Alice\'s error message', async () => {
+        // Use the identity for George.
+        await useIdentity(georgeCardName);
+
+        // Submit the transaction.
+        const myTrans = factory.newTransaction(namespace, 'updateErrorMessageStatus');
+        myTrans.oldMessage = factory.newRelationship(namespace,'ErrorMessage','1');
+        myTrans.newStatus = 'WORKING';
+        await businessNetworkConnection.submitTransaction(myTrans).should.be.rejectedWith(/does not have .* access to resource/);
+
+    });
+
+    it('Alice can update the severity for her message', async () => {
+        // Use the identity for Alice.
+        await useIdentity(aliceCardName);
+
+        // Submit the transaction.
+        const myTrans = factory.newTransaction(namespace, 'updateErrorMessageSeverity');
+        myTrans.oldMessage = factory.newRelationship(namespace,'ErrorMessage','1');
+        myTrans.newSeverity = 'ERROR';
+        await businessNetworkConnection.submitTransaction(myTrans);
+
+        // Get the asset.
+        const assetRegistry = await businessNetworkConnection.getAssetRegistry(namespace + '.' + 'ErrorMessage');
+        var asset1 = await assetRegistry.get('1');
+
+        // Validate the asset.
+        asset1.owner.getFullyQualifiedIdentifier().should.equal(participantNS + '#alice@email.com');
+        asset1.errorType.should.equal('Math Module');
+        asset1.errorSeverity.should.equal('ERROR');
+        asset1.errorStatus.should.equal('NEW');
+        asset1.errorText.should.equal('Exception in function multiply');
+
+        // Validate the events.
+        events.should.have.lengthOf(1);
+        const event = events[0];
+        event.eventId.should.be.a('string');
+        event.timestamp.should.be.an.instanceOf(Date);
+        event.oldMessage.should.equal(myTrans.oldMessage.getFullyQualifiedIdentifier());
+        event.oldSeverity.should.equal('CRITICAL');
+        event.newSeverity.should.equal('ERROR');
+
+    });
+
+    it('Alice can not update the severity for Bob\'s error message', async () => {
+        // Use the identity for Alice.
+        await useIdentity(aliceCardName);
+
+        // Submit the transaction.
+        const myTrans = factory.newTransaction(namespace, 'updateErrorMessageSeverity');
+        myTrans.oldMessage = factory.newRelationship(namespace,'ErrorMessage','2');
+        myTrans.newSeverity = 'ERROR';
+        await businessNetworkConnection.submitTransaction(myTrans).should.be.rejectedWith(/does not have .* access to resource/);
+
+    });
+
+    it('Bob can update the severity for his message', async () => {
+        // Use the identity for Bob.
+        await useIdentity(bobCardName);
+
+        // Submit the transaction.
+        const myTrans = factory.newTransaction(namespace, 'updateErrorMessageSeverity');
+        myTrans.oldMessage = factory.newRelationship(namespace,'ErrorMessage','2');
+        myTrans.newSeverity = 'ERROR';
+        await businessNetworkConnection.submitTransaction(myTrans);
+
+        // Get the asset(can see asset even after changing owner since severity is WARNING
+        const assetRegistry = await businessNetworkConnection.getAssetRegistry(namespace + '.' + 'ErrorMessage');
+        var asset1 = await assetRegistry.get('2');
+        asset1.creator.getFullyQualifiedIdentifier().should.equal(namespace + '.' + participantType4 + '#system@email.com');
+        asset1.owner.getFullyQualifiedIdentifier().should.equal(namespace + '.' + participantType2 + '#bob@email.com');
+        asset1.errorStatus = 'NEW';
+        asset1.errorSeverity = 'ERROR';
+        asset1.errorText.should.equal('A non-fatal error has occurred in function add');
+
+        // Validate the events.
+        events.should.have.lengthOf(1);
+        const event = events[0];
+        event.eventId.should.be.a('string');
+        event.timestamp.should.be.an.instanceOf(Date);
+        event.oldMessage.should.equal(myTrans.oldMessage.getFullyQualifiedIdentifier());
+        event.oldSeverity.should.equal('WARNING');
+        event.newSeverity.should.equal('ERROR');
+
+    });
+
+    it('Bob can not update the severity for Alice\'s error message', async () => {
+        // Use the identity for Bob.
+        await useIdentity(bobCardName);
+
+        // Submit the transaction.
+        const myTrans = factory.newTransaction(namespace, 'updateErrorMessageSeverity');
+        myTrans.oldMessage = factory.newRelationship(namespace,'ErrorMessage','1');
+        myTrans.newSeverity = 'ERROR';
+        await businessNetworkConnection.submitTransaction(myTrans).should.be.rejectedWith(/does not have .* access to resource/);
+
+    });
+
+    it('George can not update the severity for Alice\'s error message', async () => {
+        // Use the identity for George.
+        await useIdentity(georgeCardName);
+
+        // Submit the transaction.
+        const myTrans = factory.newTransaction(namespace, 'updateErrorMessageSeverity');
+        myTrans.oldMessage = factory.newRelationship(namespace,'ErrorMessage','1');
+        myTrans.newSeverity = 'ERROR';
+        await businessNetworkConnection.submitTransaction(myTrans).should.be.rejectedWith(/does not have .* access to resource/);
+
+    });
 
 });

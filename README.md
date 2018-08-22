@@ -11,10 +11,10 @@ This business network defines:
 `ErrorMessage`
 
 **Transactions:**
-`storeErrorMessage`
+`storeErrorMessage` `updateErrorMessageOwner` `updateErrorMessageStatus`
 
 **Events:**
-`MessageCreated` `ReplyCreated` `SubjectUpdated` `ValueUpdated`
+`ErrorMessageCreated` `ErrorMessageOwnerUpdated` `ErrorMessageStatusUpdated`
 
 To test this Business Network Definition using **Composer CLI**
 
