@@ -5,7 +5,7 @@
 This business network defines:
 
 **Participants:**
-`Member` `System` `Admin`
+`Member` `System` `Level2` `Level3` `Admin`
 
 **Assets:**
 `ErrorMessage`
